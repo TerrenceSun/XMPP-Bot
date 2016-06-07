@@ -66,6 +66,8 @@ def message_callback(conn, msg):
     text = msg.getBody()
     user = msg.getFrom()
     user.lang = 'en'      # dup
+    if text is None:
+        return False
     if text.find(' ')+1: command, args = text.split(' ', 1)
     else: command, args = text, ''
     cmd = command.lower()
@@ -109,7 +111,7 @@ def main():
     # user, server, password = jid.getNode(), jid.getDomain(), PASSWORD
 
     # conn = xmpp.Client(server)#, debug = [])
-    conn = xmpp.Client(SERVER, debug = [])
+    conn = xmpp.Client(SERVER, debug = ['always'])
     # conres = conn.connect()
     conres = conn.connect(server=(SERVER, PORT))
     if not conres:
