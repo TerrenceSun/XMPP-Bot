@@ -7,13 +7,16 @@ http://xmpppy.sourceforge.net/examples/bot.py
 '''
 
 from init_env import USERNAME, PASSWORD, SERVER, PORT
+from init_env import HANDLER
 
 import pdb
 import sys
 import xmpp
 
 ########################### user handlers start ##################################
-from bill import commands, i18n
+imp_handler = __import__(HANDLER)
+commands = imp_handler.commands
+i18n = imp_handler.i18n
 ########################### user handlers stop ###################################
 
 ############################ bot logic start #####################################
