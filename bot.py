@@ -12,6 +12,8 @@ from init_env import HANDLER
 import pdb
 import sys
 import xmpp
+import getopt
+import logging
 
 ########################### user handlers start ##################################
 imp_handler = __import__(HANDLER)
@@ -66,15 +68,34 @@ def GoOn(conn):
         pass
 
 def main():        
+    log = "WARNING"
+    try: opts, args = getopt.getopt(sys.argv[1:], "l:", ["log="])
+    except getopt.GetoptError as err:
+        print str(err)
+        sys.exit(2)
+    for o, a in opts:
+        if o in ("-l", "--log"):
+            log = a
+        else: assert False, "unhanndled option"
+
+    log_level = getattr(logging, log.upper(), None)
+    if not isinstance(log_level, int):
+        print "Invalid log level: %s" % log
+        sys.exit(2)
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=log_level)
+
     if USERNAME == '' or PASSWORD == '' or SERVER == '':        
-        print "Usage: bot.py username@server.net password"
-        sys.exit(0)
+        print "Please set USERNAME, PASSWORD and SERVER in init_env.py"
+        sys.exit(1)
         
     # jid = xmpp.JID(USERNAME)
     # user, server, password = jid.getNode(), jid.getDomain(), PASSWORD
 
     # conn = xmpp.Client(server)#, debug = [])
-    conn = xmpp.Client(SERVER, debug = ['always'])
+    xmpp_debug = []
+    if log_level == logging.DEBUG:
+        xmpp_debug.append('always')
+    conn = xmpp.Client(SERVER, debug = xmpp_debug)
     # conres = conn.connect()
     conres = conn.connect(server=(SERVER, PORT))
     if not conres:
