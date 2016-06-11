@@ -23,6 +23,10 @@ i18n = imp_handler.i18n
 
 ############################ bot logic start #####################################
 
+def disconnect_callback():
+    logging.error("disconnected from server!")
+    sys.exit(1)
+
 def message_callback(conn, msg):
     text = msg.getBody()
     user = msg.getFrom()
@@ -64,8 +68,12 @@ def StepOn(conn):
     return True
 
 def GoOn(conn):
+    i = 0;
     while StepOn(conn):
-        pass
+        i = i + 1
+        if (i >= 10*60):
+            conn.sendInitPresence()
+            i = 0
 
 def main():        
     log = "WARNING"
@@ -117,9 +125,10 @@ def main():
         print "Warning: unable to perform SASL auth os %s. Old authentication method used!" % SERVER
         
     conn.RegisterHandler('message', message_callback)
+    conn.RegisterDisconnectHandler(disconnect_callback)
     conn.sendInitPresence()
     print "Bot started."
-    
+
     GoOn(conn)
 
 if __name__ == '__main__':
