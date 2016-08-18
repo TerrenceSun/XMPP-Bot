@@ -9,6 +9,7 @@ http://xmpppy.sourceforge.net/examples/bot.py
 from init_env import USERNAME, PASSWORD, SERVER, PORT
 from init_env import HANDLER
 
+import os
 import pdb
 import sys
 import xmpp
@@ -22,6 +23,8 @@ i18n = imp_handler.i18n
 ########################### user handlers stop ###################################
 
 ############################ bot logic start #####################################
+pipe_name = "/tmp/xmpp-bot-fifo"
+pipein = None
 
 def disconnect_callback():
     logging.error("disconnected from server!")
@@ -59,12 +62,29 @@ def message_callback(conn, msg):
     if reply: conn.send(xmpp.Message(msg.getFrom(), reply))
 
 ############################# bot logic stop #####################################
+def SrvCmdOn(conn, cmd_string):
+    if cmd_string.find(' ')+1:
+        command, args = cmd_string.split(' ',1)
+    else:
+        command, args = cmd_string, ''
+    if (command == 'TO' and args != ''):
+        user, msg = args.split(' ',1)
+        conn.send(xmpp.Message(user, msg))
 
 def StepOn(conn):
+    global pipein
     try:
         conn.Process(1)
+	cmdin = os.read(pipein, 512)
+	SrvCmdOn(conn, cmdin.strip())
+	if (cmdin == ''):
+	    os.close(pipein)
+	    pipein = os.open(pipe_name, os.O_RDONLY|os.O_NONBLOCK)
     except KeyboardInterrupt:
         return False
+    except OSError as err:
+	#print os.strerror(err.errno)
+	return True
     return True
 
 def GoOn(conn):
@@ -129,7 +149,14 @@ def main():
     conn.sendInitPresence()
     print "Bot started."
 
+    if not os.path.exists(pipe_name):
+        print "make fifo:%s" % pipe_name
+        os.mkfifo(pipe_name)
+    global pipein
+    pipein = os.open(pipe_name, os.O_RDONLY|os.O_NONBLOCK)
+
     GoOn(conn)
 
 if __name__ == '__main__':
     main()
+# vim: ts=4 expandtab sw=4 sts=4 :
